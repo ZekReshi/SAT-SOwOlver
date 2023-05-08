@@ -22,15 +22,17 @@ impl Ass {
 pub struct Var {
     ass: Ass,
     watched_true: Vec<Clause>,
-    watched_false: Vec<Clause>
+    watched_false: Vec<Clause>,
+    n: usize
 }
 
 impl Var {
-    pub fn new() -> Self {
+    pub fn new(n: usize) -> Self {
         Self {
             ass: Ass::Unass,
             watched_true: Vec::new(),
-            watched_false: Vec::new()
+            watched_false: Vec::new(),
+            n
         }
     }
 }
@@ -71,8 +73,8 @@ impl SOwOlver {
             clauses: Vec::with_capacity(num_clauses),
             ass_queue: HashMap::new()
         };
-        for _ in 0..num_vars {
-            s.vars.push(Var::new());
+        for i in 0..num_vars {
+            s.vars.push(Var::new(i + 1));
         }
         s.clauses.push(Clause::new());
         s
@@ -126,6 +128,7 @@ impl SOwOlver {
             return sat;
         }
         let decision = self.dlis();
+        if decision == 0 { panic!("WTFFF"); }
         self.ass_queue.insert(decision, true);
         if self.dpll() {
             return true;
@@ -134,22 +137,51 @@ impl SOwOlver {
         return self.dpll();
     }
 
-    fn bcp(&mut self) -> Ass {
-        for pending_ass in self.ass_queue.iter() {
-            let var = self.vars.get_mut(*pending_ass.0).unwrap();
-            if var.ass != Ass::Unass { return Ass::Unass; }
-            var.ass = if *pending_ass.1 { Ass::True } else { Ass::False };
+    fn bcp(&mut self) -> bool {
+        for pending_ass in self.ass_queue {
+            let var = self.vars.get_mut(pending_ass.0).unwrap();
+            if var.ass != Ass::Unass { return false; }
+            var.ass = if pending_ass.1 { Ass::True } else { Ass::False };
 
-            let clauses = if *pending_ass.1 { &var.watched_false } else { &var.watched_true };
+            let clauses = if pending_ass.1 { &mut var.watched_false } else { &mut var.watched_true };
             for clause in clauses {
-
+                if clause.watched[0] != pending_ass.0 {
+                    if clause.watched[1] == pending_ass.0 {
+                        let swap = clause.watched[0];
+                        clause.watched[0] = clause.watched[1];
+                        clause.watched[1] = swap;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                let mut litFound = false;
+                for lit in clause.lits {
+                    if lit.0 != clause.watched[1] && 
+                        (lit.1 && self.vars.get(lit.0).unwrap().ass == Ass::True || 
+                        !lit.1 && self.vars.get(lit.0).unwrap().ass == Ass::False) {
+                        clause.watched[0] = lit.0;
+                        litFound = true;
+                        break;
+                    }
+                }
+                if !litFound {
+                    clause.watched[0] = 0;
+                    if clause.watched[1] == 0 {
+                        return false;
+                    }
+                }
             }
         }
-        return Ass::Unass;
-        // TODO
+        return true;
     }
 
     fn dlis(&self) -> usize {
-        1
+        for var in self.vars {
+            if var.ass == Ass::Unass {
+                return var.n;
+            }
+        }
+        return 0;
     }
 }
