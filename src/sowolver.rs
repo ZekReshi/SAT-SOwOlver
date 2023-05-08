@@ -1,40 +1,51 @@
-const FALSE: u8 = 0;
-const TRUE: u8 = 1;
-const UNASSIGNED: u8 = 3;
+use std::collections::HashMap;
 
-const UNDECIDED: u8 = 0;
-const SATISFIED: u8 = 1;
-const UNSATISFIED: u8 = 2;
-const UNIT: u8 = 3;
+#[repr(u8)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum Ass {
+    False,
+    True,
+    Unass
+}
+
+impl Ass {
+    fn neg(&self) -> Ass {
+        match self {
+            Ass::False => Ass::True,
+            Ass::True => Ass::False,
+            Ass::Unass => Ass::Unass
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Var {
-    val: u8,
-    watched_in: Vec<Clause>
+    ass: Ass,
+    watched_true: Vec<Clause>,
+    watched_false: Vec<Clause>
 }
 
 impl Var {
     pub fn new() -> Self {
         Self {
-            val: UNASSIGNED,
-            watched_in: Vec::new()
+            ass: Ass::Unass,
+            watched_true: Vec::new(),
+            watched_false: Vec::new()
         }
     }
 }
 
 #[derive(Debug)]
 pub struct Clause {
-    literals: Vec<i128>,
-    status: u8,
-    watched: Vec<u128>
+    lits: HashMap<usize, bool>,
+    watched: [usize;2]
 }
 
 impl Clause {
     pub fn new() -> Self {
         Self {
-            literals: Vec::new(),
-            status: UNDECIDED,
-            watched: Vec::new()
+            lits: HashMap::new(),
+            watched: [0, 0]
         }
     }
 }
@@ -43,7 +54,8 @@ pub struct SOwOlver {
     pub num_vars: usize,
     pub num_clauses: usize,
     pub vars: Vec<Var>,
-    pub clauses: Vec<Clause>
+    pub clauses: Vec<Clause>,
+    ass_queue: HashMap<usize, bool>
 }
 
 impl SOwOlver {
@@ -56,7 +68,8 @@ impl SOwOlver {
             num_vars,
             num_clauses,
             vars: Vec::with_capacity(num_vars),
-            clauses: Vec::with_capacity(num_clauses)
+            clauses: Vec::with_capacity(num_clauses),
+            ass_queue: HashMap::new()
         };
         for _ in 0..num_vars {
             s.vars.push(Var::new());
@@ -65,30 +78,35 @@ impl SOwOlver {
         s
     }
 
-    pub fn add(&mut self, lit: i128) {
-        if lit == 0 && self.clauses.len() < self.num_clauses {
-            self.clauses.push(Clause::new());
+    pub fn add(&mut self, var: usize, sign: bool) {
+        if var == 0 {
+            if self.clauses.len() == 1 {
+                let var = self.clauses.last().unwrap().lits.keys().last().unwrap();
+                self.ass_queue.insert(*var, *self.clauses.last().unwrap().lits.get(var).unwrap());
+            }
+            if self.clauses.len() < self.num_clauses {
+                self.clauses.push(Clause::new());
+            }
         }
         else {
             let c = self.clauses.last_mut().unwrap();
-            c.literals.push(lit);
-            if c.watched.len() < 2 {
-                c.watched.push(lit.unsigned_abs());
+            c.lits.insert(var, sign);
+            if c.watched[0] == 0 {
+                c.watched[0] = var;
+            }
+            else if c.watched[1] == 0 {
+                c.watched[1] = var;
             }
         }
     }
 
     pub fn assume(&mut self, lit: i128) {
-        let lit_obj = self.get_literal_mut(lit.unsigned_abs());
-        lit_obj.val = u8::from(lit > 0);
+        //let lit_obj = self.get_var_mut(lit.unsigned_abs());
+        //lit_obj.val = if lit > 0 { Val::True } else { Val::False };
     }
 
     pub fn solve(&mut self) -> bool {
         self.dpll()
-    }
-
-    pub fn val(&mut self, lit: i128) -> u8 {
-        self.get_literal_mut(lit.unsigned_abs()).val
     }
 
     pub fn failed(&mut self, lit: Var) -> bool {
@@ -104,41 +122,34 @@ impl SOwOlver {
     pub fn dpll(&mut self) -> bool {
         self.bcp();
         let mut sat = true;
-        for clause in &self.clauses {
-            match clause.status {
-                UNDECIDED | UNIT => sat = false,
-                UNSATISFIED => return false,
-                SATISFIED => (),
-                _ => panic!("Invalid Status"),
-            }
-        }
         if sat {
             return sat;
         }
-        let picked_var = self.dlis();
-        self.get_literal_mut(picked_var).val = TRUE;
+        let decision = self.dlis();
+        self.ass_queue.insert(decision, true);
         if self.dpll() {
             return true;
         }
-        self.get_literal_mut(picked_var).val = FALSE;
-        if self.dpll() {
-            true
-        }
-        else {
-            self.get_literal_mut(picked_var).val = UNASSIGNED;
-            false
-        }
+        self.ass_queue.insert(decision, false);
+        return self.dpll();
     }
 
-    fn bcp(&mut self) {
+    fn bcp(&mut self) -> Ass {
+        for pending_ass in self.ass_queue.iter() {
+            let var = self.vars.get_mut(*pending_ass.0).unwrap();
+            if var.ass != Ass::Unass { return Ass::Unass; }
+            var.ass = if *pending_ass.1 { Ass::True } else { Ass::False };
 
+            let clauses = if *pending_ass.1 { &var.watched_false } else { &var.watched_true };
+            for clause in clauses {
+
+            }
+        }
+        return Ass::Unass;
+        // TODO
     }
 
-    fn dlis(&self) -> u128 {
+    fn dlis(&self) -> usize {
         1
-    }
-
-    fn get_literal_mut(&mut self, lit: u128) -> &mut Var {
-        self.vars.get_mut((lit-1) as usize).unwrap()
     }
 }
