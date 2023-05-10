@@ -20,10 +20,10 @@ impl Ass {
 
 #[derive(Debug)]
 pub struct Var {
-    ass: Ass,
-    watched_true: Vec<Clause>,
-    watched_false: Vec<Clause>,
-    n: usize
+    pub ass: Ass,
+    watched_true: Vec<usize>,
+    watched_false: Vec<usize>,
+    pub n: usize
 }
 
 impl Var {
@@ -40,14 +40,16 @@ impl Var {
 #[derive(Debug)]
 pub struct Clause {
     lits: HashMap<usize, bool>,
-    watched: [usize;2]
+    watched: [usize;2],
+    n: usize
 }
 
 impl Clause {
-    pub fn new() -> Self {
+    pub fn new(n: usize) -> Self {
         Self {
             lits: HashMap::new(),
-            watched: [0, 0]
+            watched: [0, 0],
+            n
         }
     }
 }
@@ -57,7 +59,7 @@ pub struct SOwOlver {
     pub num_clauses: usize,
     pub vars: Vec<Var>,
     pub clauses: Vec<Clause>,
-    ass_queue: HashMap<usize, bool>
+    ass_queue: Vec<(usize, bool)>
 }
 
 impl SOwOlver {
@@ -71,40 +73,42 @@ impl SOwOlver {
             num_clauses,
             vars: Vec::with_capacity(num_vars),
             clauses: Vec::with_capacity(num_clauses),
-            ass_queue: HashMap::new()
+            ass_queue: Vec::new()
         };
         for i in 0..num_vars {
             s.vars.push(Var::new(i + 1));
         }
-        s.clauses.push(Clause::new());
+        s.clauses.push(Clause::new(s.clauses.len() + 1));
         s
     }
 
     pub fn add(&mut self, var: usize, sign: bool) {
         if var == 0 {
-            if self.clauses.len() == 1 {
+            if self.clauses.last().unwrap().lits.len() == 1 {
                 let var = self.clauses.last().unwrap().lits.keys().last().unwrap();
-                self.ass_queue.insert(*var, *self.clauses.last().unwrap().lits.get(var).unwrap());
+                self.ass_queue.push((*var, *self.clauses.last().unwrap().lits.get(var).unwrap()));
             }
             if self.clauses.len() < self.num_clauses {
-                self.clauses.push(Clause::new());
+                self.clauses.push(Clause::new(self.clauses.len() + 1));
             }
         }
         else {
-            let c = self.clauses.last_mut().unwrap();
-            c.lits.insert(var, sign);
-            if c.watched[0] == 0 {
-                c.watched[0] = var;
+            let clause = self.clauses.last_mut().unwrap();
+            clause.lits.insert(var, sign);
+            let v = self.vars.get_mut(var - 1).unwrap();
+            let mut watched = false;
+            if clause.watched[0] == 0 {
+                clause.watched[0] = var;
+                watched = true;
             }
-            else if c.watched[1] == 0 {
-                c.watched[1] = var;
+            else if clause.watched[1] == 0 {
+                clause.watched[1] = var;
+                watched = true;
+            }
+            if watched {
+                (*(if sign { &mut v.watched_true } else { &mut v.watched_false })).push(clause.n);
             }
         }
-    }
-
-    pub fn assume(&mut self, lit: i128) {
-        //let lit_obj = self.get_var_mut(lit.unsigned_abs());
-        //lit_obj.val = if lit > 0 { Val::True } else { Val::False };
     }
 
     pub fn solve(&mut self) -> bool {
@@ -115,73 +119,72 @@ impl SOwOlver {
         todo!()
     }
 
-    pub fn set_terminate<F>(&mut self, callback: F)
-    where
-        F: FnMut() {
-        todo!()
-    }
-
     pub fn dpll(&mut self) -> bool {
         self.bcp();
-        let mut sat = true;
-        if sat {
-            return sat;
-        }
         let decision = self.dlis();
-        if decision == 0 { panic!("WTFFF"); }
-        self.ass_queue.insert(decision, true);
+        if decision == 0 { return true }
+        self.ass_queue.push((decision, false));
         if self.dpll() {
             return true;
         }
-        self.ass_queue.insert(decision, false);
-        return self.dpll();
+        self.ass_queue.push((decision, true));
+        self.dpll()
     }
 
     fn bcp(&mut self) -> bool {
-        for pending_ass in self.ass_queue {
-            let var = self.vars.get_mut(pending_ass.0).unwrap();
-            if var.ass != Ass::Unass { return false; }
+        println!("Assignment Queue: {:?}", self.ass_queue);
+        while let Some(pending_ass) = self.ass_queue.pop() {
+            println!("Assigning {} {}", pending_ass.0, pending_ass.1);
+            let var: &mut Var = self.vars.get_mut(pending_ass.0 - 1).unwrap();
+            if pending_ass.1 && var.ass == Ass::False || !pending_ass.1 && var.ass == Ass::True { return false; }
             var.ass = if pending_ass.1 { Ass::True } else { Ass::False };
 
-            let clauses = if pending_ass.1 { &mut var.watched_false } else { &mut var.watched_true };
+            let var = self.vars.get(pending_ass.0 - 1).unwrap();
+            let clauses = if pending_ass.1 { &var.watched_false } else { &var.watched_true };
             for clause in clauses {
+                let clause = self.clauses.get_mut(clause - 1).unwrap();
                 if clause.watched[0] != pending_ass.0 {
                     if clause.watched[1] == pending_ass.0 {
-                        let swap = clause.watched[0];
-                        clause.watched[0] = clause.watched[1];
-                        clause.watched[1] = swap;
+                        clause.watched.swap(0, 1);
                     }
                     else {
                         continue;
                     }
                 }
-                let mut litFound = false;
-                for lit in clause.lits {
-                    if lit.0 != clause.watched[1] && 
-                        (lit.1 && self.vars.get(lit.0).unwrap().ass == Ass::True || 
-                        !lit.1 && self.vars.get(lit.0).unwrap().ass == Ass::False) {
-                        clause.watched[0] = lit.0;
-                        litFound = true;
+                let mut lit_found = false;
+                for lit in &clause.lits {
+                    if *lit.0 != clause.watched[1] && (self.vars.get(*lit.0 - 1).unwrap().ass == Ass::Unass ||
+                        (*lit.1 && self.vars.get(lit.0 - 1).unwrap().ass == Ass::True || 
+                        !*lit.1 && self.vars.get(lit.0 - 1).unwrap().ass == Ass::False)) {
+                        println!("Relinking watch pointer in clause {}: {} -> {}", clause.n, clause.watched[0], *lit.0);
+                        clause.watched[0] = *lit.0;
+                        lit_found = true;
                         break;
                     }
                 }
-                if !litFound {
+                if !lit_found {
                     clause.watched[0] = 0;
                     if clause.watched[1] == 0 {
                         return false;
                     }
+                    else {
+                        let ass = *clause.lits.get(&clause.watched[1]).unwrap();
+                        println!("Unit Clause detected: {}, queueing {} {}", clause.n, clause.watched[1], ass);
+                        self.ass_queue.push((clause.watched[1], ass));
+                    }
                 }
             }
         }
-        return true;
+        true
     }
 
     fn dlis(&self) -> usize {
-        for var in self.vars {
+        for var in &self.vars {
             if var.ass == Ass::Unass {
+                println!("Deciding {}", var.n);
                 return var.n;
             }
         }
-        return 0;
+        0
     }
 }
