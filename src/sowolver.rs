@@ -140,7 +140,7 @@ impl SOwOlver {
             var.ass = if pending_ass.1 { Ass::True } else { Ass::False };
 
             let var = self.vars.get(pending_ass.0 - 1).unwrap();
-            let clauses = if pending_ass.1 { &var.watched_false } else { &var.watched_true };
+            let clauses = if pending_ass.1 { var.watched_false.clone() } else { var.watched_true.clone() };
             for clause in clauses {
                 let clause = self.clauses.get_mut(clause - 1).unwrap();
                 if clause.watched[0] != pending_ass.0 {
@@ -153,11 +153,20 @@ impl SOwOlver {
                 }
                 let mut lit_found = false;
                 for lit in &clause.lits {
-                    if *lit.0 != clause.watched[1] && (self.vars.get(*lit.0 - 1).unwrap().ass == Ass::Unass ||
+                    if *lit.0 != pending_ass.0 && *lit.0 != clause.watched[1] && (self.vars.get(*lit.0 - 1).unwrap().ass == Ass::Unass ||
                         (*lit.1 && self.vars.get(lit.0 - 1).unwrap().ass == Ass::True || 
                         !*lit.1 && self.vars.get(lit.0 - 1).unwrap().ass == Ass::False)) {
                         println!("Relinking watch pointer in clause {}: {} -> {}", clause.n, clause.watched[0], *lit.0);
                         clause.watched[0] = *lit.0;
+
+                        let var = self.vars.get_mut(pending_ass.0 - 1).unwrap();
+                        let clauses = if pending_ass.1 { &mut var.watched_false } else { &mut var.watched_true };
+                        clauses.remove(clauses.iter().position(|c| *c == clause.n).unwrap());
+
+                        let var = self.vars.get_mut(*lit.0 - 1).unwrap();
+                        let clauses = if *clause.lits.get(lit.0).unwrap() { &mut var.watched_true } else { &mut var.watched_false };
+                        clauses.push(clause.n);
+
                         lit_found = true;
                         break;
                     }
@@ -167,7 +176,7 @@ impl SOwOlver {
                     if clause.watched[1] == 0 {
                         return false;
                     }
-                    else {
+                    else if self.vars.get(clause.watched[1] - 1).unwrap().ass == Ass::Unass {
                         let ass = *clause.lits.get(&clause.watched[1]).unwrap();
                         println!("Unit Clause detected: {}, queueing {} {}", clause.n, clause.watched[1], ass);
                         self.ass_queue.push((clause.watched[1], ass));
