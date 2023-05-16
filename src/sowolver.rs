@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::ig::IG;
+
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum Ass {
@@ -59,7 +61,8 @@ pub struct SOwOlver {
     pub num_clauses: usize,
     pub vars: Vec<Var>,
     pub clauses: Vec<Clause>,
-    ass_queue: Vec<(usize, bool)>
+    ass_queue: Vec<(usize, bool)>,
+    pub ig: IG
 }
 
 impl SOwOlver {
@@ -73,7 +76,8 @@ impl SOwOlver {
             num_clauses,
             vars: Vec::with_capacity(num_vars),
             clauses: Vec::with_capacity(num_clauses),
-            ass_queue: Vec::new()
+            ass_queue: Vec::new(),
+            ig: IG::new()
         };
         for i in 0..num_vars {
             s.vars.push(Var::new(i + 1));
