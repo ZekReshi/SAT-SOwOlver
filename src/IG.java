@@ -54,7 +54,7 @@ public class IG {
 
     public void imply(Lit lit, Clause clause) {
         List<Node> reason = new ArrayList<>();
-        Node node = new Node(lit, false, clause);
+        Node node = new Node(lit, true, clause);
         decisions.push(node);
         nodes.push(node);
     }

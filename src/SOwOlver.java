@@ -25,6 +25,11 @@ public class SOwOlver {
         curClause = clauses[0];
     }
 
+    public void add(int n) {
+        System.out.println(getLit(n));
+        add(getLit(n));
+    }
+
     public void add(Lit lit) {
         if (curClause == null) {
             System.out.println("Clauses full, literal ignored");
@@ -124,8 +129,8 @@ public class SOwOlver {
                 for (Lit lit_it : clause.lits) {
                     if (lit_it.var != lit.var &&  lit_it != clause.watched[1] &&
                             (lit_it.var.ass == Var.Ass.Unass || lit_it.var.ass == Var.Ass.from(lit_it.positive))) {
+                        System.out.println("Relinking in " + clause.n + ": " + clause.watched[0] + " -> " + lit_it);
                         clause.watched[0] = lit_it;
-                        System.out.println("Relinking in " + clause.n + ": " + lit + " -> " + lit_it);
 
                         toRemove.add(clause);
                         if (lit_it.positive) {
@@ -163,6 +168,20 @@ public class SOwOlver {
             }
         }
         return null;
+    }
+
+    public Lit getLit(int n) {
+        if (n == 0) {
+            return null;
+        }
+        boolean positive = n > 0;
+        if (!positive) {
+            n = -n;
+        }
+        if (n > vars.length) {
+            return null;
+        }
+        return positive ? vars[n-1].positiveLit : vars[n-1].negativeLit;
     }
 
 }

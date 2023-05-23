@@ -1,32 +1,28 @@
 public class Main {
     public static void main(String[] args) {
         System.out.println("Hello world!");
-        SOwOlver sOwOlver = new SOwOlver(7, 3);
-        sOwOlver.add(sOwOlver.vars[0].positiveLit);
-        sOwOlver.add(sOwOlver.vars[1].positiveLit);
-        sOwOlver.add(sOwOlver.vars[2].positiveLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[0].positiveLit);
-        sOwOlver.add(sOwOlver.vars[1].negativeLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[0].positiveLit);
-        sOwOlver.add(sOwOlver.vars[2].negativeLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[1].positiveLit);
-        sOwOlver.add(sOwOlver.vars[2].negativeLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[0].negativeLit);
-        sOwOlver.add(sOwOlver.vars[1].negativeLit);
-        sOwOlver.add(sOwOlver.vars[2].positiveLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[0].negativeLit);
-        sOwOlver.add(sOwOlver.vars[1].negativeLit);
-        sOwOlver.add(sOwOlver.vars[2].negativeLit);
-        sOwOlver.add(null);
-        sOwOlver.add(sOwOlver.vars[0].negativeLit);
-        sOwOlver.add(sOwOlver.vars[1].positiveLit);
-        sOwOlver.add(sOwOlver.vars[2].positiveLit);
-        sOwOlver.add(null);
+        SOwOlver sOwOlver = new SOwOlver(6, 3);
+        sOwOlver.add(1);
+        sOwOlver.add(2);
+        sOwOlver.add(3);
+        sOwOlver.add(0);
+        sOwOlver.add(1);
+        sOwOlver.add(-2);
+        sOwOlver.add(0);
+        sOwOlver.add(1);
+        sOwOlver.add(-3);
+        sOwOlver.add(0);
+        sOwOlver.add(2);
+        sOwOlver.add(-3);
+        sOwOlver.add(0);
+        sOwOlver.add(-1);
+        sOwOlver.add(-2);
+        sOwOlver.add(3);
+        sOwOlver.add(0);
+        sOwOlver.add(-1);
+        sOwOlver.add(-2);
+        sOwOlver.add(-3);
+        sOwOlver.add(0);
         for (Var var : sOwOlver.vars) {
             System.out.println(var);
         }
