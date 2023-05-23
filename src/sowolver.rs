@@ -41,9 +41,9 @@ impl Var {
 
 #[derive(Debug)]
 pub struct Clause {
-    lits: HashMap<usize, bool>,
+    pub lits: HashMap<usize, bool>,
     watched: [usize;2],
-    n: usize
+    pub n: usize
 }
 
 impl Clause {
@@ -124,12 +124,42 @@ impl SOwOlver {
     }
 
     pub fn dpll(&mut self) -> bool {
-        self.bcp();
+        let res = self.bcp();
+        if !res {
+            let vars = self.ig.conflict();
+            println!("Conflict! Unassigning {:?}", vars);
+            println!("{:?}", self.ig);
+            for var in vars {
+                self.vars.get_mut(var - 1).unwrap().ass = Ass::Unass;
+            }
+            for clause in &mut self.clauses {
+                for lit in &clause.lits {
+                    let var = self.vars.get_mut(*lit.0 - 1).unwrap();
+                    if var.ass != Ass::False {
+                        if clause.watched[0] == 0 && clause.watched[1] != *lit.0{
+                            clause.watched[0] = *lit.0;
+                            (if *lit.1 { var.watched_true } else { var.watched_false }).push(clause.n);
+                        }
+                        else if clause.watched[1] == 0 && clause.watched[0] != *lit.0 {
+                            clause.watched[1] = *lit.0;
+                            (if *lit.1 { var.watched_true } else { var.watched_false }).push(clause.n);
+                        }
+                    }
+                }
+            }
+            self.ass_queue.clear();
+            return false
+        }
         let decision = self.dlis();
+        if decision == 0 {
+            return true;
+        }
+        self.ig.decide(decision);
+        println!("{:?}", self.ig);
         if decision == 0 { return true }
         self.ass_queue.push((decision, false));
         if self.dpll() {
-            return true;
+            return true
         }
         self.ass_queue.push((decision, true));
         self.dpll()
@@ -184,6 +214,8 @@ impl SOwOlver {
                         let ass = *clause.lits.get(&clause.watched[1]).unwrap();
                         println!("Unit Clause detected: {}, queueing {} {}", clause.n, clause.watched[1], ass);
                         self.ass_queue.push((clause.watched[1], ass));
+                        self.ig.imply(clause.watched[1], clause);
+                        println!("{:?}", self.ig);
                     }
                 }
             }

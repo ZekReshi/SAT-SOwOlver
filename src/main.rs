@@ -1,4 +1,5 @@
 mod sowolver;
+mod ig;
 
 use std::{fs::File, io::{BufRead,BufReader}};
 
@@ -16,7 +17,7 @@ fn main() {
             varCount = val.parse::<usize>().expect("file malformed");
         }
         if idx == 3 {
-            clauseCount = val.parse::<usize>().expect("file malformed");
+            clauseCount = val.parse::<usize>().expect("file malformed")+3;
         }
     }
     let mut s = SOwOlver::new(varCount, clauseCount);
@@ -30,6 +31,41 @@ fn main() {
             
     
     }
+    s.add(1, true);
+    s.add(2, true);
+    s.add(3, true);
+    s.add(4, true);
+    s.add(5, true);
+    s.add(0, false);
+    s.add(1, true);
+    s.add(2, true);
+    s.add(3, true);
+    s.add(4, true);
+    s.add(5, false);
+    s.add(0, false);
+    s.add(1, true);
+    s.add(2, true);
+    s.add(3, false);
+    s.add(4, true);
+    s.add(5, false);
+    s.add(0, false);
+    s.add(1, false);
+    s.add(2, false);
+    s.add(3, false);
+    s.add(4, false);
+    s.add(5, false);
+    s.add(0, false);
+    println!("{:?}", s.clauses);
+    println!("{}", s.solve());
     println!("{:?}", s.vars);
-    println!("{:?}", s.clauses.len());
+    println!("{:?}", s.clauses);
+    println!("{}", s.clauses.len());
+    println!("{:?}", s.ig);
+    print_assignment(s);
+}
+
+fn print_assignment(s: SOwOlver) {
+    for var in s.vars {
+        println!("{} {:?}", var.n, var.ass);
+    }
 }
