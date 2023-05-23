@@ -34,4 +34,23 @@ public class Var {
         negativeLit = new Lit(this, false);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(n);
+        sb.append(": ");
+        sb.append(ass);
+        sb.append(" + ");
+        for (Clause clause : watchedTrue) {
+            sb.append(clause.n);
+            sb.append(' ');
+        }
+        sb.append("- ");
+        for (Clause clause : watchedFalse) {
+            sb.append(clause.n);
+            sb.append(' ');
+        }
+        return sb.toString();
+    }
+
 }

@@ -12,4 +12,9 @@ public class Lit {
         return positive ? var.ass : Var.Ass.neg(var.ass);
     }
 
+    @Override
+    public String toString() {
+        return "" + (positive ? var.n : -var.n);
+    }
+
 }

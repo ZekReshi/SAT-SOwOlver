@@ -13,4 +13,19 @@ public class Clause {
         this.n = n;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(n);
+        sb.append(": ");
+        for (Lit lit : lits) {
+            sb.append(lit);
+            if (watched[0] == lit || watched[1] == lit) {
+                sb.append('*');
+            }
+            sb.append(' ');
+        }
+        return sb.toString();
+    }
+
 }
