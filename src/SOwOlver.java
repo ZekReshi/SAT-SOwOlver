@@ -1,9 +1,9 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import Var.Ass;
 
 public class SOwOlver {
 
@@ -177,42 +177,39 @@ public class SOwOlver {
     }
 
     private Lit dlis() {
-        int clauseIncrease = -1;
-        Lit clauseIncreaseLit = null;
-        for (Var var : vars) {
-            if(var.ass ==Var.Ass.Unass){
-                int posCount = 0;
-                int negCount = 0;
-                var negLit = var.negativeLit;
-                var posLit = var.positiveLit;
-
-                for (Clause clause : clauses) {
-                    if(!clauseSAT(clause)){
-                        if(clause.lits.contains(negLit))
-                        negCount++;
-                        if(clause.lits.contains(posLit))
-                        posCount++;
-                    }
-                }
-                for (Clause clause : learnedClauses) {
-                    if(!clauseSAT(clause)){
-                        if(clause.lits.contains(negLit))
-                        negCount++;
-                        if(clause.lits.contains(posLit))
-                        posCount++;
-                    }
-                }
-                if(negCount > clauseIncrease && negCount != 0){
-                    clauseIncreaseLit = negLit;
-                    clauseIncrease = negCount;
-                }
-                if(posCount > clauseIncrease && posCount != 0){
-                    clauseIncreaseLit = posLit;
-                    clauseIncrease = posCount;
+        int varCount = vars.length;
+        int[] litImprovements = new int[varCount*2];
+        for (Clause clause : clauses) {
+            if(!clauseSAT(clause)){
+                for (Lit lit :clause.lits) {
+                    int index = lit.var.n -1; //zero based var nums
+                    if(!lit.positive)
+                        index += varCount;
+                    litImprovements[index]++;
                 }
             }
         }
-        return clauseIncrease != -1 ? clauseIncreaseLit :null;
+
+        for (Clause clause : learnedClauses) {
+            if(!clauseSAT(clause)){
+                for (Lit lit :clause.lits) {
+                    int index = lit.var.n -1; //zero based var nums
+                    if(!lit.positive)
+                        index += varCount;
+                    litImprovements[index]++;
+                }
+            }
+        }
+
+        int maxAt = 0;
+        for (int i = 0; i < litImprovements.length; i++) {
+            maxAt = litImprovements[i] > litImprovements[maxAt] ? i : maxAt;
+        }
+        if(litImprovements[maxAt]==0) return null;
+        int varNum =(maxAt % varCount)+1;
+        Var decision = Arrays.stream(vars).filter(it-> it.n == varNum).findFirst().get();
+        return (maxAt>=varCount) ?decision.negativeLit : decision.positiveLit; 
+      
     }
 
     private boolean clauseSAT(Clause clause) {
