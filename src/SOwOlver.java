@@ -3,6 +3,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import Var.Ass;
+
 public class SOwOlver {
 
     Var[] vars;
@@ -90,19 +92,18 @@ public class SOwOlver {
             assQueue.clear();
             return false;
         }
-        Var decision = dlis();
-        System.out.println("Deciding " + (decision != null ? decision.n : "nothing") + " false");
+        Lit decision = dlis();
+        System.out.println("DLIS returned: "+decision);
         if (decision == null) {
             return true;
         }
-        ig.decide(decision.negativeLit);
-        assQueue.add(decision.negativeLit);
+        ig.decide(decision);
+        assQueue.add(decision);
         if (dpll()) {
             return true;
         }
-        System.out.println("Implying " + decision.n + " true");
-        ig.imply(decision.positiveLit, null);
-        assQueue.add(decision.positiveLit);
+        ig.decide(decision);
+        assQueue.add(decision);
         return dpll();
     }
 
@@ -175,13 +176,52 @@ public class SOwOlver {
         return !conflict;
     }
 
-    private Var dlis() {
+    private Lit dlis() {
+        int clauseIncrease = -1;
+        Lit clauseIncreaseLit = null;
         for (Var var : vars) {
-            if (var.ass == Var.Ass.Unass) {
-                return var;
+            if(var.ass ==Var.Ass.Unass){
+                int posCount = 0;
+                int negCount = 0;
+                var negLit = var.negativeLit;
+                var posLit = var.positiveLit;
+
+                for (Clause clause : clauses) {
+                    if(!clauseSAT(clause)){
+                        if(clause.lits.contains(negLit))
+                        negCount++;
+                        if(clause.lits.contains(posLit))
+                        posCount++;
+                    }
+                }
+                for (Clause clause : learnedClauses) {
+                    if(!clauseSAT(clause)){
+                        if(clause.lits.contains(negLit))
+                        negCount++;
+                        if(clause.lits.contains(posLit))
+                        posCount++;
+                    }
+                }
+                if(negCount > clauseIncrease && negCount != 0){
+                    clauseIncreaseLit = negLit;
+                    clauseIncrease = negCount;
+                }
+                if(posCount > clauseIncrease && posCount != 0){
+                    clauseIncreaseLit = posLit;
+                    clauseIncrease = posCount;
+                }
             }
         }
-        return null;
+        return clauseIncrease != -1 ? clauseIncreaseLit :null;
+    }
+
+    private boolean clauseSAT(Clause clause) {
+        for(Lit lit : clause.lits){
+            if(lit.ass() == Var.Ass.True){
+                return true;
+            }
+        }
+        return false;
     }
 
     public Lit getLit(int n) {

@@ -22,11 +22,8 @@ public class Main {
                 System.out.println(clause);
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             System.out.println("File could not be read");
-        }
-                //new SOwOlver(6, 3);
-        
+        }        
     }
 
     public static SOwOlver getSolver(String filePath) throws IOException{
