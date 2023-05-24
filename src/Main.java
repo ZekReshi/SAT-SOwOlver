@@ -1,40 +1,56 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
         System.out.println("Hello world!");
-        SOwOlver sOwOlver = new SOwOlver(6, 3);
-        sOwOlver.add(1);
-        sOwOlver.add(2);
-        sOwOlver.add(3);
-        sOwOlver.add(0);
-        sOwOlver.add(1);
-        sOwOlver.add(-2);
-        sOwOlver.add(0);
-        sOwOlver.add(1);
-        sOwOlver.add(-3);
-        sOwOlver.add(0);
-        sOwOlver.add(2);
-        sOwOlver.add(-3);
-        sOwOlver.add(0);
-        sOwOlver.add(-1);
-        sOwOlver.add(-2);
-        sOwOlver.add(3);
-        sOwOlver.add(0);
-        sOwOlver.add(-1);
-        sOwOlver.add(-2);
-        sOwOlver.add(-3);
-        sOwOlver.add(0);
-        for (Var var : sOwOlver.vars) {
-            System.out.println(var);
+        SOwOlver sOwOlver;
+        try {
+            sOwOlver = getSolver("formula.cnf");
+            for (Var var : sOwOlver.vars) {
+                System.out.println(var);
+            }
+            for (Clause clause : sOwOlver.clauses) {
+                System.out.println(clause);
+            }
+            System.out.println(sOwOlver.solve());
+            for (Var var : sOwOlver.vars) {
+                System.out.println(var);
+            }
+            for (Clause clause : sOwOlver.clauses) {
+                System.out.println(clause);
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            System.out.println("File could not be read");
         }
-        for (Clause clause : sOwOlver.clauses) {
-            System.out.println(clause);
+                //new SOwOlver(6, 3);
+        
+    }
+
+    public static SOwOlver getSolver(String filePath) throws IOException{
+        
+        List<String> fileLines = Files.readAllLines(Path.of(filePath));
+        int clauseCount = getClauseCount(fileLines.get(0));
+        int varCount = getVarCount(fileLines.get(0));
+        SOwOlver solver = new SOwOlver(clauseCount, varCount);
+        for (String line : fileLines.subList(1, fileLines.size())) {
+            String[] lits = line.split(" ");
+            for (String lit : lits) {
+                solver.add(Integer.parseInt(lit));
+            }
         }
-        System.out.println(sOwOlver.solve());
-        for (Var var : sOwOlver.vars) {
-            System.out.println(var);
-        }
-        for (Clause clause : sOwOlver.clauses) {
-            System.out.println(clause);
-        }
+
+        return solver;
+    }
+
+    private static int getVarCount(String line) {
+        return Integer.parseInt(line.split(" ")[2]);
+    }
+
+    private static int getClauseCount(String line) {
+        return Integer.parseInt(line.split(" ")[3]);
     }
 }
