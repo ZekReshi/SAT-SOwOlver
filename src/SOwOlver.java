@@ -21,12 +21,13 @@ public class SOwOlver {
         learnedClauses = new ArrayList<>();
         assQueue = new LinkedList<>();
         ig = new IG();
-        clauses[0] = new Clause(1);
-        curClause = clauses[0];
+        if (numClauses > 0) {
+            clauses[0] = new Clause(1);
+            curClause = clauses[0];
+        }
     }
 
     public void add(int n) {
-        System.out.println(getLit(n));
         add(getLit(n));
     }
 
@@ -37,7 +38,10 @@ public class SOwOlver {
         }
         if (lit == null) {
             if (curClause.lits.size() == 1) {
-                assQueue.add(curClause.lits.get(0));
+                Lit toAssign = curClause.lits.get(0);
+                System.out.println("Unit clause " + curClause.n + ": Queueing " + toAssign);
+                assQueue.add(toAssign);
+                ig.imply(toAssign, curClause);
             }
             int n = curClause.n;
             if (n < clauses.length) {
@@ -87,6 +91,7 @@ public class SOwOlver {
             return false;
         }
         Var decision = dlis();
+        System.out.println("Deciding " + (decision != null ? decision.n : "nothing") + " false");
         if (decision == null) {
             return true;
         }
@@ -95,12 +100,15 @@ public class SOwOlver {
         if (dpll()) {
             return true;
         }
-        ig.decide(decision.positiveLit);
+        System.out.println("Implying " + decision.n + " true");
+        ig.imply(decision.positiveLit, null);
         assQueue.add(decision.positiveLit);
         return dpll();
     }
 
     private boolean bcp() {
+        boolean conflict = false;
+        outer:
         while (!assQueue.isEmpty()) {
             Lit lit = assQueue.remove();
             System.out.println("Assigning " + lit);
@@ -129,7 +137,7 @@ public class SOwOlver {
                 for (Lit lit_it : clause.lits) {
                     if (lit_it.var != lit.var &&  lit_it != clause.watched[1] &&
                             (lit_it.var.ass == Var.Ass.Unass || lit_it.var.ass == Var.Ass.from(lit_it.positive))) {
-                        System.out.println("Relinking in " + clause.n + ": " + clause.watched[0] + " -> " + lit_it);
+                        //System.out.println("Relinking in " + clause.n + ": " + clause.watched[0] + " -> " + lit_it);
                         clause.watched[0] = lit_it;
 
                         toRemove.add(clause);
@@ -148,9 +156,15 @@ public class SOwOlver {
                         return false;
                     }
                     else if (clause.watched[1].ass() == Var.Ass.Unass) {
-                        System.out.println("Unit clause " + clause.n + ": Queueing " + clause.watched[1]);
-                        ig.imply(clause.watched[1], clause);
-                        assQueue.add(clause.watched[1]);
+                        if (ig.imply(clause.watched[1], clause)) {
+                            System.out.println("Unit clause " + clause.n + ": Queueing " + clause.watched[1]);
+                            assQueue.add(clause.watched[1]);
+                        }
+                        else {
+                            System.out.println("Unit clause " + clause.n + ": Conflict when queueing " + clause.watched[1]);
+                            conflict = true;
+                            break outer;
+                        }
                     }
                 }
             }
@@ -158,7 +172,7 @@ public class SOwOlver {
                 clauses.remove(clause);
             }
         }
-        return true;
+        return !conflict;
     }
 
     private Var dlis() {

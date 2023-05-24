@@ -52,11 +52,16 @@ public class IG {
         nodes.push(node);
     }
 
-    public void imply(Lit lit, Clause clause) {
-        List<Node> reason = new ArrayList<>();
-        Node node = new Node(lit, true, clause);
+    public boolean imply(Lit lit, Clause clause) {
+        for (Node n : nodes) {
+            if (n.lit.var == lit.var) {
+                return n.lit == lit;
+            }
+        }
+        Node node = clause == null ? new Node(lit, true) : new Node(lit, true, clause);
         decisions.push(node);
         nodes.push(node);
+        return true;
     }
 
     public List<Var> conflict() {
@@ -65,7 +70,7 @@ public class IG {
         do {
             node = nodes.pop();
             vars.add(node.lit.var);
-        } while (node.implication);
+        } while (node.implication && !nodes.isEmpty());
         decisions.pop();
         return vars;
     }
