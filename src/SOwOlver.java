@@ -182,10 +182,13 @@ public class SOwOlver {
         for (Clause clause : clauses) {
             if(!clauseSAT(clause)){
                 for (Lit lit :clause.lits) {
-                    int index = lit.var.n -1; //zero based var nums
-                    if(!lit.positive)
-                        index += varCount;
-                    litImprovements[index]++;
+                    if(lit.ass() == Var.Ass.Unass){
+                        int index = lit.var.n -1; //zero based var nums
+                        if(!lit.positive)
+                            index += varCount;
+                        litImprovements[index]++;
+                    }
+                    
                 }
             }
         }
@@ -193,10 +196,12 @@ public class SOwOlver {
         for (Clause clause : learnedClauses) {
             if(!clauseSAT(clause)){
                 for (Lit lit :clause.lits) {
-                    int index = lit.var.n -1; //zero based var nums
-                    if(!lit.positive)
-                        index += varCount;
-                    litImprovements[index]++;
+                    if(lit.ass() == Var.Ass.Unass){
+                        int index = lit.var.n -1; //zero based var nums
+                        if(!lit.positive)
+                            index += varCount;
+                        litImprovements[index]++;
+                    }
                 }
             }
         }
