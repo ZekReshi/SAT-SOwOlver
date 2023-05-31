@@ -7,19 +7,17 @@ public class Main {
     public static void main(String[] args) {
         SOwOlver sOwOlver;
         try {
-            sOwOlver = getSolver("formula.cnf");
-            for (Var var : sOwOlver.vars) {
-                System.out.println(var);
+            sOwOlver = getSolver("../test-formulas/prime2209.in");
+            boolean sat = sOwOlver.solve();
+            if (sat) {
+                System.out.println("SAT, assignment follows");
+                for (Var var : sOwOlver.vars) {
+                    System.out.print(var.ass == Var.Ass.True ? var.n : var.ass == Var.Ass.False ? -var.n : "#" + var.n);
+                    System.out.print(", ");
+                }
             }
-            for (Clause clause : sOwOlver.clauses) {
-                System.out.println(clause);
-            }
-            System.out.println(sOwOlver.solve());
-            for (Var var : sOwOlver.vars) {
-                System.out.println(var);
-            }
-            for (Clause clause : sOwOlver.clauses) {
-                System.out.println(clause);
+            else {
+                System.out.println("UNSAT");
             }
         } catch (IOException e) {
             System.out.println("File could not be read");

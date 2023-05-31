@@ -1,8 +1,4 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 
 public class SOwOlver {
@@ -35,13 +31,13 @@ public class SOwOlver {
 
     public void add(Lit lit) {
         if (curClause == null) {
-            System.out.println("Clauses full, literal ignored");
+            //System.out.println("Clauses full, literal ignored");
             return;
         }
         if (lit == null) {
             if (curClause.lits.size() == 1) {
                 Lit toAssign = curClause.lits.get(0);
-                System.out.println("Unit clause " + curClause.n + ": Queueing " + toAssign);
+                //System.out.println("Unit clause " + curClause.n + ": Queueing " + toAssign);
                 assQueue.add(toAssign);
                 ig.imply(toAssign, curClause);
             }
@@ -84,8 +80,11 @@ public class SOwOlver {
     private boolean dpll() {
         boolean result = bcp();
         if (!result) {
+            Clause learnedClause = ig.getDecisionClause(clauses.length + learnedClauses.size() + 1);
+            learnedClauses.add(learnedClause);
+            //System.out.println("Learned clause " + learnedClause);
             List<Var> vars = ig.conflict();
-            System.out.println("Conflict, unassigning " + vars);
+            //System.out.println("Conflict, unassigning " + vars);
             for (Var var : vars) {
                 var.ass = Var.Ass.Unass;
             }
@@ -93,7 +92,7 @@ public class SOwOlver {
             return false;
         }
         Lit decision = dlis();
-        System.out.println("DLIS returned: "+decision);
+        //System.out.println("DLIS returned: "+decision);
         if (decision == null) {
             return true;
         }
@@ -102,8 +101,8 @@ public class SOwOlver {
         if (dpll()) {
             return true;
         }
-        ig.decide(decision);
-        assQueue.add(decision);
+        ig.imply(decision.neg(), null);
+        assQueue.add(decision.neg());
         return dpll();
     }
 
@@ -112,7 +111,7 @@ public class SOwOlver {
         outer:
         while (!assQueue.isEmpty()) {
             Lit lit = assQueue.remove();
-            System.out.println("Assigning " + lit);
+            //System.out.println("Assigning " + lit);
             if (lit.var.ass != Var.Ass.Unass) {
                 if (lit.var.ass != Var.Ass.from(lit.positive)) {
                     return false;
@@ -158,11 +157,11 @@ public class SOwOlver {
                     }
                     else if (clause.watched[1].ass() == Var.Ass.Unass) {
                         if (ig.imply(clause.watched[1], clause)) {
-                            System.out.println("Unit clause " + clause.n + ": Queueing " + clause.watched[1]);
+                            //System.out.println("Unit clause " + clause.n + ": Queueing " + clause.watched[1]);
                             assQueue.add(clause.watched[1]);
                         }
                         else {
-                            System.out.println("Unit clause " + clause.n + ": Conflict when queueing " + clause.watched[1]);
+                            //System.out.println("Unit clause " + clause.n + ": Conflict when queueing " + clause.watched[1]);
                             conflict = true;
                             break outer;
                         }

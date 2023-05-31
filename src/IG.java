@@ -59,7 +59,6 @@ public class IG {
             }
         }
         Node node = clause == null ? new Node(lit, true) : new Node(lit, true, clause);
-        decisions.push(node);
         nodes.push(node);
         return true;
     }
@@ -73,6 +72,23 @@ public class IG {
         } while (node.implication && !nodes.isEmpty());
         decisions.pop();
         return vars;
+    }
+
+    public Clause getDecisionClause(int n) {
+        Clause clause = new Clause(n);
+        for (Node node : decisions) {
+            if (clause.lits.size() <= 1) {
+                clause.watched[clause.lits.size()] = node.lit.neg();
+                if (node.lit.positive) {
+                    node.lit.var.watchedTrue.add(clause);
+                }
+                else {
+                    node.lit.var.watchedFalse.add(clause);
+                }
+            }
+            clause.lits.add(node.lit.neg());
+        }
+        return clause;
     }
 
 }

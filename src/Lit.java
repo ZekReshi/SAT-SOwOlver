@@ -17,4 +17,8 @@ public class Lit {
         return "" + (positive ? var.n : -var.n);
     }
 
+    public Lit neg() {
+        return positive ? var.negativeLit : var.positiveLit;
+    }
+
 }
