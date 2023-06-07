@@ -74,6 +74,9 @@ public class SOwOlver {
     }
 
     public boolean solve() {
+        if (clauses.length == 0) {
+            return false;
+        }
         return dpll();
     }
 
@@ -101,9 +104,14 @@ public class SOwOlver {
         if (dpll()) {
             return true;
         }
-        ig.imply(decision.neg(), null);
-        assQueue.add(decision.neg());
-        return dpll();
+        for (Lit lit : learnedClauses.get(learnedClauses.size()-1).lits) {
+            if (lit.var == decision.var) {
+                ig.imply(decision.neg(), learnedClauses.get(learnedClauses.size()-1));
+                assQueue.add(decision.neg());
+                return dpll();
+            }
+        }
+        return false;
     }
 
     private boolean bcp() {

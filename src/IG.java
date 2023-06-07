@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Stack;
+import java.util.*;
 
 public class IG {
 
@@ -22,19 +19,18 @@ public class IG {
             this.lit = lit;
             this.level = decisions.size() + 1;
             this.implication = implication;
-            Node[] reason = new Node[clause.lits.size() - 1];
+            reason = new Node[clause.lits.size() - 1];
             int i = 0;
             for (Lit lit_it : clause.lits) {
                 if (lit_it != lit) {
                     for (Node node : nodes) {
-                        if (node.lit == lit_it) {
+                        if (node.lit == lit_it.neg()) {
                             reason[i] = node;
                             i++;
                         }
                     }
                 }
             }
-            this.reason = reason;
         }
     }
 
@@ -70,20 +66,39 @@ public class IG {
             node = nodes.pop();
             vars.add(node.lit.var);
         } while (node.implication && !nodes.isEmpty());
-        decisions.pop();
+        if (!decisions.empty()) {
+            decisions.pop();
+        }
         return vars;
     }
 
     public Clause getDecisionClause(int n) {
         Clause clause = new Clause(n);
-        for (Node node : decisions) {
+        HashSet<Node> reason = new HashSet<>(Arrays.asList(nodes.peek().reason));
+        HashSet<Node> newReason;
+        boolean done = false;
+        while (!done) {
+            newReason = new HashSet<>();
+            done = true;
+            for (Node node : reason) {
+                if (node.implication) {
+                    newReason.addAll(Arrays.asList(node.reason));
+                    done = false;
+                }
+                else {
+                    newReason.add(node);
+                }
+            }
+            reason = newReason;
+        }
+        for (Node node : reason) {
             if (clause.lits.size() <= 1) {
                 clause.watched[clause.lits.size()] = node.lit.neg();
                 if (node.lit.positive) {
-                    node.lit.var.watchedTrue.add(clause);
+                    node.lit.var.watchedFalse.add(clause);
                 }
                 else {
-                    node.lit.var.watchedFalse.add(clause);
+                    node.lit.var.watchedTrue.add(clause);
                 }
             }
             clause.lits.add(node.lit.neg());

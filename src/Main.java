@@ -5,9 +5,13 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Invalid argument count!");
+            return;
+        }
         SOwOlver sOwOlver;
         try {
-            sOwOlver = getSolver("../test-formulas/prime2209.in");
+            sOwOlver = getSolver(args[0]);
             boolean sat = sOwOlver.solve();
             if (sat) {
                 System.out.println("SAT, assignment follows");
@@ -15,9 +19,11 @@ public class Main {
                     System.out.print(var.ass == Var.Ass.True ? var.n : var.ass == Var.Ass.False ? -var.n : "#" + var.n);
                     System.out.print(", ");
                 }
+                System.exit(10);
             }
             else {
                 System.out.println("UNSAT");
+                System.exit(20);
             }
         } catch (IOException e) {
             System.out.println("File could not be read");
